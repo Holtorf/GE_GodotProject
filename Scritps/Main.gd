@@ -9,47 +9,14 @@ var playerPosY
 var startX
 var startY
 
-var mobPosX
-var mobPosY
+var mobs = []
 
-var screen_size
+var velocity
 
-var _MapWidth
-var _MapHeight
-var _CellSize
-var _BorderWidth
-
-var _bObstacleMap = []
-
-var _FlowFieldZ = []
 
 func _ready():
 	randomize()
 	_new_game()
-	
-	screen_size = get_viewport().get_rect().size
-	
-	_BorderWidth = 4
-	_CellSize = 32
-	
-	_MapWidth = screen_size.x / _CellSize
-	_MapHeight = screen_size.y / _CellSize
-	
-	_bObstacleMap = [_MapWidth * _MapHeight]
-	_FlowFieldZ = [_MapWidth * _MapHeight]
-	
-	playerPosX = $StartPosition.position.x
-	playerPosY = $StartPosition.position.y
-	
-	startX = 0
-	startY = 0
-	
-	auto 
-	
-	# x , y, distance
-	var listOne = [[],[],[]]
-	
-	listOne.append = [[playerPosX],[playerPosY],[1]] 
 
 
 
@@ -64,44 +31,73 @@ func _new_game():
 	$Player.start($StartPosition.position)
 	$StartTimer.start()
 	
+	
 
 func _process(delta: float) -> void:
 	playerPosX = $Player.position.x
 	playerPosY = $Player.position.y
-	
-	
-	
-	for x in _MapWidth:
-		for y in _MapHeight:
-			if x == 0:
-				_FlowFieldZ[x, y] = -1;
-			elif y == 0:
-				_FlowFieldZ[x, y] = -1;
-			elif x == (_MapWidth - 1):
-				_FlowFieldZ[x, y] = -1;
-			elif y == (_MapHeight - 1):
-				_FlowFieldZ[x, y] = -1;
-			elif _bObstacleMap[x,y]:
-				_FlowFieldZ[x, y] = -1;
-			else:
-				_FlowFieldZ[x, y] = 0;
+	if mobs.size() > 0:
+		_calculateGoal()
 
-#func _calculatePathNew():
+func _calculateGoal():
+	var distance : int = 0
+	var angle : int = 0
+	var degrees : int = 0
+	var relativeX : int = 0
+	var relativeY : int = 0
+	var angleDifference : int = 0
+	var directionX = $Player.position.x + PI / 2.00
+	var directionY =  $Player.position.y + PI / 2.00
 	
+	for i in mobs.size():
+		distance = sqrt(pow((playerPosX - mobs[i].position.x),2) + pow((playerPosY - mobs[i].position.y),2))
+		
+		print("Distnace: ", distance)
+		
+		relativeX = playerPosX - mobs[i].position.x
+		relativeY = playerPosY - mobs[i].position.y
+		
+		
+		
+		angle = atan2(-(relativeY), relativeX)
+		degrees = angle*(180 / PI)
+		degrees = -(degrees)
+		print("Angle: ", angle)
+		
+		if degrees < 0:
+			degrees = (degrees + 360) % 360
+		
+		print("Degrees: ",degrees)
+		#angleDifference = mobs[i].rotation - degrees;
+		
+		#if angleDifference > 0:
+		#	if angleDifference < 180:
+		#		mobs[i].rotation = -10
+		#	else:
+		#		mobs[i].rotation = 10
+		#else:
+		#	if angleDifference > -180:
+		#		mobs[i].rotation = 10
+		#	else:
+		#		mobs[i].rotation = -10
+		if distance >= 10:
+			mobs[i].linear_velocity = velocity.rotated(degrees)
+		
+		
 	
-
-
 
 func _on_MobTimer_timeout() -> void:
 	var mob_spawn_location = get_node("MobPath/MobSpawnLocation");
 	mob_spawn_location.offset = randi()
 	
 	var mob = mob_scene.instance()
+	
 	add_child(mob)
 	mob.position = mob_spawn_location.position
 	
-	var velocity = Vector2(rand_range(150.0, 250.0), 0.0)
-	
+	velocity = Vector2(rand_range(150.0, 250.0), 0.0)
+	mobs.append(mob)
+	print(mobs.size())
 
 
 func _on_ScoreTimer_timeout() -> void:
