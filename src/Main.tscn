@@ -11,7 +11,9 @@ _data = {
 
 [node name="Main" type="Node"]
 script = ExtResource( 3 )
-mob_scene = ExtResource( 2 )
+cell_width = null
+cell_height = null
+game_speed = null
 
 [node name="Player" parent="." instance=ExtResource( 1 )]
 
@@ -28,9 +30,14 @@ one_shot = true
 position = Vector2( 240, 450 )
 
 [node name="MobPath" type="Path2D" parent="."]
+visible = false
 curve = SubResource( 1 )
 
 [node name="MobSpawnLocation" type="PathFollow2D" parent="MobPath"]
+visible = false
+
+[node name="Mob" parent="." instance=ExtResource( 2 )]
+position = Vector2( 80, 168 )
 
 [connection signal="timeout" from="MobTimer" to="." method="_on_MobTimer_timeout"]
 [connection signal="timeout" from="ScoreTimer" to="." method="_on_ScoreTimer_timeout"]

@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/gameover.wav-851c36eedaefd5b39e21b433cc7cf274.sample"
+
+[deps]
+
+source_file="res://Textures/gameover.wav"
+dest_files=[ "res://.import/gameover.wav-851c36eedaefd5b39e21b433cc7cf274.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

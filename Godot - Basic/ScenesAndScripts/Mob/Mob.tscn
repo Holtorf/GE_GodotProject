@@ -1,0 +1,46 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://Textures/enemySwimming_1.png" type="Texture" id=1]
+[ext_resource path="res://Textures/enemyFlyingAlt_1.png" type="Texture" id=2]
+[ext_resource path="res://ScenesAndScripts/Mob/Mob.gd" type="Script" id=3]
+[ext_resource path="res://Textures/enemyWalking_1.png" type="Texture" id=4]
+[ext_resource path="res://Textures/enemyFlyingAlt_2.png" type="Texture" id=5]
+[ext_resource path="res://Textures/enemySwimming_2.png" type="Texture" id=6]
+[ext_resource path="res://Textures/enemyWalking_2.png" type="Texture" id=7]
+
+[sub_resource type="SpriteFrames" id=1]
+animations = [ {
+"frames": [ ExtResource( 4 ), ExtResource( 7 ) ],
+"loop": true,
+"name": "walk",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 1 ), ExtResource( 6 ) ],
+"loop": true,
+"name": "swim",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 2 ), ExtResource( 5 ) ],
+"loop": true,
+"name": "fly",
+"speed": 5.0
+} ]
+
+[sub_resource type="CapsuleShape2D" id=2]
+radius = 22.0
+
+[node name="Mob" type="Area2D"]
+script = ExtResource( 3 )
+
+[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
+scale = Vector2( 0.5, 0.5 )
+frames = SubResource( 1 )
+animation = "swim"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+rotation = 1.5708
+shape = SubResource( 2 )
+
+[node name="Line2D" type="Line2D" parent="."]
+width = 2.0
+default_color = Color( 1, 0, 0, 1 )

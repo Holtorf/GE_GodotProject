@@ -1,22 +1,105 @@
 extends Node
 
-export(PackedScene) var mob_scene
 var score
 
-var playerPosX
-var playerPosY
-
-var startX
-var startY
-
-var mobs = []
-
+var playerPosition
 var velocity
 
+export var cell_width = 20
+export var cell_height = 20
+var cell_array = []
+var cell_array_color = []
+var cell_array_positive = []
+var cell_array_negative = []
+var cells_x
+var cells_y
+var player
+export var game_speed : float = 1
 
 func _ready():
 	randomize()
+	cells_x = int(floor(get_viewport().size.x/cell_width))
+	cells_y = int(floor(get_viewport().size.y/cell_height))
+	
+	_create_new_grid()
 	_new_game()
+
+func _process(delta: float) -> void:
+	playerPosition = $Player.position
+
+func _create_new_grid():
+	_generate_grid()
+	
+	cell_array_positive = cell_array.duplicate(true)
+	cell_array_positive[_get_random_cell().x][_get_random_cell().y] = 1
+	
+	cell_array_negative = cell_array.duplicate(true)
+	#cell_array_negative[_get_random_cell().x][_get_random_cell().y] = -1
+	
+	_color_cells()
+	
+	yield(_propagate_grid(), "completed")
+	
+	mob_position = _get_random_cell()
+	$Mob.set_position(_cell_to_position(mob_position))
+	#$Mob.show()
+	
+	yield(_find_path(mob_position), "completed")
+
+func _find_path(start_pos):
+	var path = [start_pos]
+	var new_pos = _find_next_cell(start_pos)
+	var iterations_count = 0
+	while (path[-1] != new_pos):
+		yield(get_tree().create_timer(0.1), "timeout")
+		path.append(new_pos)
+		new_pos = _find_next_cell(new_pos)
+		iterations_count += 1
+		if (path.size() > cells_x * cells_y): break
+	
+	print("iterations: ", iterations_count)
+
+func _find_next_cell(current_cell):
+	var next_cell = current_cell
+	var next_cell_influence = cell_array[current_cell.x][current_cell.y]
+	var connections = _find_connections(current_cell.x, current_cell.y)
+	for cell in connections:
+		var influence = cell_array[cell[0]][cell[1]]
+		if (influence > next_cell_influence):
+			next_cell_influence = influence
+			next_cell = cell
+	$Line2D.add_point(_cell_to_position(current_cell))
+	$Line2D.add_point(_cell_to_position(next_cell))
+	
+	return _array_to_vector2(next_cell)
+
+func _generate_grid():
+	var cell_scene = preload("res://src/Cell.tscn")
+	for x in range(cells_x):
+		cell_array.append([])
+		cell_array_color.append([])
+		
+		for y in range(cells_y):
+			var cell = cell_scene.instance()
+			cell.set_position(Vector2(x*cell_width,y*cell_height))
+			cell_array[x].append(0)
+			cell_array_color[x].append(cell.get_node("ColorRect"))
+			cell_array_color[x][y].color = Color( 0, 0, 0, 0 )
+			cell_array_color[x][y].set_size(Vector2(cell_width,cell_height))
+			add_child(cell)
+
+func _propagate_grid():
+	var propagation_count = 0
+	for c in cells_x:
+		yield(get_tree().create_timer(0.1), "timeout")
+		var positive_changed = _propagate_positive()
+		propagation_count += 1
+		for x in range(cell_array.size()):
+			for y in range(cell_array[x].size()):
+				cell_array[x][y] = cell_array_positive[x][y] + cell_array_negative[x][y]
+		_color_cells()
+	
+
 
 
 
@@ -24,80 +107,12 @@ func _game_over():
 	$ScoreTimer.stop()
 	$MobTime.stop()
 	
-	#get_tree().call_group("mobs", "queue_free")
 
 func _new_game():
 	score = 0
 	$Player.start($StartPosition.position)
 	$StartTimer.start()
 	
-	
-
-func _process(delta: float) -> void:
-	playerPosX = $Player.position.x
-	playerPosY = $Player.position.y
-	if mobs.size() > 0:
-		_calculateGoal()
-
-func _calculateGoal():
-	var distance : int = 0
-	var angle : int = 0
-	var degrees : int = 0
-	var relativeX : int = 0
-	var relativeY : int = 0
-	var angleDifference : int = 0
-	var directionX = $Player.position.x + PI / 2.00
-	var directionY =  $Player.position.y + PI / 2.00
-	
-	for i in mobs.size():
-		distance = sqrt(pow((playerPosX - mobs[i].position.x),2) + pow((playerPosY - mobs[i].position.y),2))
-		
-		print("Distnace: ", distance)
-		
-		relativeX = playerPosX - mobs[i].position.x
-		relativeY = playerPosY - mobs[i].position.y
-		
-		
-		
-		angle = atan2(-(relativeY), relativeX)
-		degrees = angle*(180 / PI)
-		degrees = -(degrees)
-		print("Angle: ", angle)
-		
-		if degrees < 0:
-			degrees = (degrees + 360) % 360
-		
-		print("Degrees: ",degrees)
-		#angleDifference = mobs[i].rotation - degrees;
-		
-		#if angleDifference > 0:
-		#	if angleDifference < 180:
-		#		mobs[i].rotation = -10
-		#	else:
-		#		mobs[i].rotation = 10
-		#else:
-		#	if angleDifference > -180:
-		#		mobs[i].rotation = 10
-		#	else:
-		#		mobs[i].rotation = -10
-		if distance >= 10:
-			mobs[i].linear_velocity = velocity.rotated(degrees)
-		
-		
-	
-
-func _on_MobTimer_timeout() -> void:
-	var mob_spawn_location = get_node("MobPath/MobSpawnLocation");
-	mob_spawn_location.offset = randi()
-	
-	var mob = mob_scene.instance()
-	
-	add_child(mob)
-	mob.position = mob_spawn_location.position
-	
-	velocity = Vector2(rand_range(150.0, 250.0), 0.0)
-	mobs.append(mob)
-	print(mobs.size())
 
 
 func _on_ScoreTimer_timeout() -> void:
@@ -105,5 +120,5 @@ func _on_ScoreTimer_timeout() -> void:
 	
 
 func _on_StartTimer_timeout() -> void:
-	$MobTimer.start()
+
 	$ScoreTimer.start()
