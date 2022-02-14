@@ -17,6 +17,8 @@ var score
 var velocity
 var mob_position
 
+var player_position
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	randomize()
@@ -34,28 +36,42 @@ func _new_game():
 func _create_new_grid():
 	_generate_grid()
 	
-	cell_array_positive = cell_array.duplicate(true)
-	cell_array_positive[_get_random_cell().x][_get_random_cell().y] = 1
+	#player_position = GameVariables._position_to_cell($Player.position)
+		
+	#cell_array_positive = cell_array.duplicate(true)
+	#cell_array_positive[player_position.x][player_position.y] = 1
 	
-	cell_array_negative = cell_array.duplicate(true)
+	
+	
+	#cell_array_negative = cell_array.duplicate(true)
 	#cell_array_negative[_get_random_cell().x][_get_random_cell().y] = -1
 	
 	_color_cells()
 	
-	yield(_propagate_grid(), "completed")
+	#yield(_propagate_grid(), "completed")
 	
 	mob_position = _get_random_cell()
 	$Mob.set_position(_cell_to_position(mob_position))
 	$Mob.show()
 	
-	yield(_find_path(mob_position), "completed")
+	#_find_path((mob_position))
+	
+	#yield(_find_path(mob_position), "completed")
 	#yield(get_tree().create_timer(1), "timeout")
 	#get_tree().reload_current_scene()
 
 func _process(delta: float) -> void:
 	if mob_position != null:
-		yield(_find_path(mob_position), "completed")
-		GameVariables.cell_influences.append([$Player.playerPosition, Vector2(cells_x - 1,0), 1])
+#		yield(_find_path(mob_position), "completed")
+		player_position = GameVariables._position_to_cell($Player.position)
+		
+		cell_array_positive = cell_array.duplicate(true)
+		cell_array_positive[player_position.x][player_position.y] = 1
+		mob_position = GameVariables._position_to_cell($Mob.position)
+		
+		_propagate_grid()
+		
+		_find_path((mob_position))
 		
 
 func _find_path(start_pos):
@@ -63,7 +79,7 @@ func _find_path(start_pos):
 	var new_pos = _find_next_cell(start_pos)
 	var iterations_count = 0
 	while (path[-1] != new_pos):
-		yield(get_tree().create_timer(0.1), "timeout")
+		#yield(get_tree().create_timer(0.01), "timeout")
 		path.append(new_pos)
 		new_pos = _find_next_cell(new_pos)
 		iterations_count += 1
@@ -104,7 +120,7 @@ func _generate_grid():
 func _propagate_grid():
 	var propagation_count = 0
 	for c in cells_x:
-		yield(get_tree().create_timer(0.1), "timeout")
+		#yield(get_tree().create_timer(0.1), "timeout")
 		var positive_changed = _propagate_positive()
 		#var negative_changed = _propagate_negative()
 		propagation_count += 1
@@ -112,8 +128,8 @@ func _propagate_grid():
 		
 		for x in range(cell_array.size()):
 			for y in range(cell_array[x].size()):
-				cell_array[x][y] = cell_array_positive[x][y] + cell_array_negative[x][y]
-		_color_cells()
+				cell_array[x][y] = cell_array_positive[x][y] #+ cell_array_negative[x][y]
+		#_color_cells()
 	
 	print("propagations: ", propagation_count)
 
@@ -128,7 +144,7 @@ func _propagate_positive():
 			var connections = _find_connections(x, y)
 			
 			for cell in connections:
-				var influence = cell_array_positive[cell[0]][cell[1]] * exp(-0.15)
+				var influence = cell_array_positive[cell[0]][cell[1]] * exp(-0.05)
 				max_influence = max(influence, max_influence)
 			
 			influence_changed = true if cell_array_positive[x][y] != max_influence else influence_changed
